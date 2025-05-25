@@ -150,13 +150,23 @@
               "icon": "lucide-list",
               "title": "Outline of Untitled"
             }
+          },
+          {
+            "id": "71a940a17822bf88",
+            "type": "leaf",
+            "state": {
+              "type": "git-view",
+              "state": {},
+              "icon": "git-pull-request",
+              "title": "Source Control"
+            }
           }
-        ]
+        ],
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -169,7 +179,7 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "04448280cdf0fb52",
+  "active": "c815c298250abd8a",
   "lastOpenFiles": [
     "Git 과 Obsidian의 연결을 확인하는 노트입니다..md"
   ]
