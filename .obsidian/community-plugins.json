@@ -1,4 +1,7 @@
 [
   "obsidian-tasks-plugin",
-  "obsidian-git"
+  "obsidian-git",
+  "emoji-shortcodes",
+  "obsidian-admonition",
+  "editing-toolbar"
 ]
