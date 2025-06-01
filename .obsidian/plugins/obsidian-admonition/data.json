@@ -50,6 +50,19 @@
       "injectColor": true,
       "noTitle": false,
       "copy": true
+    },
+    "Test": {
+      "type": "Test",
+      "color": "214, 41, 168",
+      "icon": {
+        "name": "lucide-pencil-line",
+        "type": "obsidian"
+      },
+      "command": false,
+      "title": "Test",
+      "injectColor": true,
+      "noTitle": false,
+      "copy": true
     }
   },
   "syntaxHighlight": false,
