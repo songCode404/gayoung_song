@@ -4,63 +4,24 @@
     "type": "split",
     "children": [
       {
-        "id": "92c52d8800df4cee",
+        "id": "e2db619dd227e322",
         "type": "tabs",
         "children": [
           {
-            "id": "04448280cdf0fb52",
-            "type": "leaf",
-            "state": {
-              "type": "empty",
-              "state": {},
-              "icon": "lucide-file",
-              "title": "새 탭"
-            }
-          },
-          {
-            "id": "cd88575f6e778cfd",
+            "id": "a9ecafdf0ac97618",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Engineering Information Processing/1. 요구사항 확인/1-1 . 소프트웨어 생명주기(SDLC) 모형.md",
+                "file": "Engineering Information Processing/1. 요구사항 확인/1-5 .  아키텍쳐 패턴 및 디자인 패턴.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "1-1 . 소프트웨어 생명주기(SDLC) 모형"
-            }
-          },
-          {
-            "id": "d54c25ddd9c1bb4f",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Engineering Information Processing/1. 요구사항 확인/1-3 . 요구사항 확인.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "1-3 . 요구사항 확인"
-            }
-          },
-          {
-            "id": "59ad1fbc29d70da2",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Engineering Information Processing/1. 요구사항 확인/1-4 . UML 분석 모델.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "1-4 . UML 분석 모델"
+              "title": "1-5 .  아키텍쳐 패턴 및 디자인 패턴"
             }
           }
-        ],
-        "currentTab": 3
+        ]
       }
     ],
     "direction": "vertical"
@@ -218,15 +179,22 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "59ad1fbc29d70da2",
+  "active": "c815c298250abd8a",
   "lastOpenFiles": [
-    "Engineering Information Processing/1. 요구사항 확인/1-3 . 요구사항 확인.md",
+    "Engineering Information Processing/화면 설계",
     "Engineering Information Processing/1. 요구사항 확인/1-4 . UML 분석 모델.md",
+    "Engineering Information Processing/1. 요구사항 확인/1-5 .  아키텍쳐 패턴 및 디자인 패턴.md",
+    "1-5 .  아키텍쳐 패턴 및 디자인 패턴 4-2) 계층형(Layer) 패턴.md",
+    "Engineering Information Processing/1. 요구사항 확인/1-1 . 소프트웨어 생명주기(SDLC) 모형.md",
+    "Engineering Information Processing/1. 요구사항 확인/1-2 . 현행 시스템 및 개발 기술 분석.md",
+    "1-5 .  아키텍쳐 패턴/디자인 패턴.md",
+    "1-5 .  아키텍쳐 패턴",
+    "1-5 .  아키텍쳐 패턴 / 다자인 패턴.md",
+    "1-5 .  아키텍쳐 패턴 ",
+    "Engineering Information Processing/1. 요구사항 확인/1-3 . 요구사항 확인.md",
     "images/Pasted image 20250601203307.png",
     "images/Pasted image 20250601202020.png",
     "images",
-    "Engineering Information Processing/1. 요구사항 확인/1-2 . 현행 시스템 및 개발 기술 분석.md",
-    "Engineering Information Processing/1. 요구사항 확인/1-1 . 소프트웨어 생명주기(SDLC) 모형.md",
     "Engineering Information Processing/1. 요구사항 확인",
     "Git 과 Obsidian의 연결을 확인하는 노트입니다..md",
     "Engineering Information Processing"
