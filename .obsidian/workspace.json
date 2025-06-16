@@ -4,39 +4,24 @@
     "type": "split",
     "children": [
       {
-        "id": "0b8d2800fde2fec4",
+        "id": "fbf8180be4b9023a",
         "type": "tabs",
         "children": [
           {
-            "id": "d9591f0103562dbd",
+            "id": "259fcf90f1ed0441",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Engineering Information Processing/3. 데이터 입출력 구현/3-1 . 데이터베이스 기초.md",
+                "file": "Engineering Information Processing/3. 데이터 입출력 구현/3-3 . 물리 데이터 저장소.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "3-1 . 데이터베이스 기초"
-            }
-          },
-          {
-            "id": "6d7c1b11d68ef6b7",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Engineering Information Processing/3. 데이터 입출력 구현/3-2 . 논리 데이터 저장소.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "3-2 . 논리 데이터 저장소"
+              "title": "3-3 . 물리 데이터 저장소"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -196,8 +181,9 @@
   },
   "active": "c815c298250abd8a",
   "lastOpenFiles": [
-    "Engineering Information Processing/3. 데이터 입출력 구현/3-1 . 데이터베이스 기초.md",
+    "Engineering Information Processing/3. 데이터 입출력 구현/3-3 . 물리 데이터 저장소.md",
     "Engineering Information Processing/3. 데이터 입출력 구현/3-2 . 논리 데이터 저장소.md",
+    "Engineering Information Processing/3. 데이터 입출력 구현/3-1 . 데이터베이스 기초.md",
     "Engineering Information Processing/2. 화면 설계/2-2 . UI 설계.md",
     "Engineering Information Processing/3. 데이터 입출력 구현",
     "Engineering Information Processing/2. 화면 설계/2-1 . UI 요구사항 확인.md",
