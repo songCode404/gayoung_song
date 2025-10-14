@@ -1,5 +1,5 @@
 // public/main.js
-// 로컬 three.module.js 임포트 (public 폴더 안에 설정)
+// CDN을 통해 three.js 임포트
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 
 // ==============================
@@ -71,25 +71,29 @@ function fitCameraToObject(group, padding = 1.6) {
 // ==============================
 async function getJsonFromAI(userInput) {
   // 프론트에서는 API 키를 절대 사용하지 않음! (server.js가 대신 호출)
-  const promptTemplate = `
-당신은 JSON 전문가입니다.
-아래 스키마로만 JSON 응답하세요. (코드블록/설명 금지)
+  // main.js의 getJsonFromAI 함수 내부
+const promptTemplate = `
+당신은 최고의 JSON 전문가입니다.
+아래 규칙을 반드시 지켜 응답하세요.
+- 반드시 "objects" 키를 포함하는 단일 JSON 객체로만 응답합니다.
+- 설명이나 코드블록(\`\`\`) 없이 순수한 JSON 텍스트만 반환합니다.
 
+---
+[예시 1]
+사용자 입력: 태양과 지구
+JSON 응답:
 {
   "objects": [
-    {
-      "name": "영문명",
-      "size": 10,
-      "color": "0xffff00",
-      "rotation_speed": 0.01,
-      "orbit": { "target": "Sun", "distance": 30, "speed": 0.01 }
-    }
+    { "name": "Sun", "size": 20, "color": "0xffdd00", "rotation_speed": 0.004 },
+    { "name": "Earth", "size": 10, "color": "0x00aaff", "rotation_speed": 0.01, "orbit": { "target": "Sun", "distance": 50, "speed": 0.005 } }
   ]
 }
+---
 
-[사용자 입력]
-${userInput}
-  `.trim();
+[실제 요청]
+사용자 입력: ${userInput}
+JSON 응답:
+`.trim();
 
   console.log('[DEBUG] 프록시 호출 준비:', { userInput });
 
@@ -106,8 +110,14 @@ ${userInput}
   console.log('[DEBUG] 원본 응답:', data);
 
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  if (!text) throw new Error('빈 응답');
-  return JSON.parse(text); // 서버에서 JSON 모드로 요청 중
+  if (!text) throw new Error('AI로부터 빈 응답을 받았습니다.');
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    console.error('JSON 파싱 오류:', error);
+    throw new Error('AI가 유효하지 않은 JSON 형식으로 응답했습니다.');
+  }
 }
 
 // ==============================
@@ -148,6 +158,13 @@ function createCelestialObject(objData) {
 }
 
 function buildSceneFromJSON(data) {
+  // 데이터 형식이 올바른지 확인하여 TypeError를 원천 방지하는 코드
+  if (!data || !Array.isArray(data.objects)) {
+    console.error('오류: AI 응답 데이터에 "objects" 배열이 없습니다.', data);
+    // 사용자에게 직접적인 피드백을 주기 위해 statusText를 업데이트할 수 있습니다.
+    throw new Error('AI 응답의 데이터 형식이 잘못되었습니다.');
+  }
+
   console.log('[DEBUG] buildSceneFromJSON 시작:', data);
 
   const map = {};
@@ -244,13 +261,29 @@ generateButton.addEventListener('click', async () => {
     const jsonData = await getJsonFromAI(userInput);
     console.log('[DEBUG] AI로부터 받은 JSON:', jsonData);
 
-    buildSceneFromJSON(jsonData);
+    // AI의 변칙적인 데이터 구조에 대응하기 위한 최종 로직
+    let sceneData;
+    if (Array.isArray(jsonData)) {
+      // 데이터가 배열일 경우
+      if (jsonData.length > 0 && jsonData[0].objects && Array.isArray(jsonData[0].objects)) {
+        // [ { objects: [...] } ] 구조일 경우, 내부 객체를 사용
+        sceneData = jsonData[0];
+      } else {
+        // [ {...}, {...} ] 구조일 경우, 객체로 감싸줌
+        sceneData = { objects: jsonData };
+      }
+    } else {
+      // 데이터가 원래부터 객체 { objects: [...] } 였을 경우
+      sceneData = jsonData;
+    }
+
+    buildSceneFromJSON(sceneData);
 
     console.log('[DEBUG] 빌드 이후 상태:', { scene, solarSystem }, 'children:', solarSystem.children.length);
     statusText.textContent = '생성 완료!';
   } catch (err) {
     console.error('[DEBUG] 생성 중 오류:', err);
-    statusText.textContent = '오류가 발생했습니다. 콘솔을 확인해주세요.';
+    statusText.textContent = `오류: ${err.message}`; // 사용자에게 좀 더 친절한 오류 메시지 표시
   } finally {
     generateButton.disabled = false;
   }
