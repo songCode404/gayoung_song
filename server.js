@@ -2,7 +2,7 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { API_KEY } from './config.js'; // config.js에서 API_KEY를 가져옵니다.
+import { API_KEY } from './public/config.js'; // config.js에서 API_KEY를 가져옵니다.
 
 // __dirname 대체 (ESM 환경)
 const __filename = fileURLToPath(import.meta.url);

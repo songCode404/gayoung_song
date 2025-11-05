@@ -1,6 +1,8 @@
 // public/main.js
 // CDN을 통해 three.js 임포트
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+// [수정] config.js에서 텍스처 맵을 임포트합니다.
+import { PLANET_TEXTURES } from './config.js';
 
 // ==============================
 // 1) 기본 설정 (Scene, Camera, Renderer)
@@ -12,11 +14,25 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000
 );
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialIAS: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 camera.position.z = 30;
+
+// [추가] 텍스처 로더 생성
+const textureLoader = new THREE.TextureLoader();
+
+// [추가] 텍스처를 위한 조명 설정
+// MeshStandardMaterial은 빛이 없으면 검은색으로 보입니다.
+// 1. 은은한 주변광
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // (색상, 강도)
+scene.add(ambientLight);
+
+// 2. 태양 위치에서 비추는 점광원 (태양계 중심)
+const pointLight = new THREE.PointLight(0xffffff, 2.0, 0); // (색상, 강도, 거리)
+pointLight.position.set(0, 0, 0); // 태양계 중심에 배치
+scene.add(pointLight);
 
 console.log('[DEBUG] 초기화 완료:', { scene, camera, renderer });
 
@@ -27,7 +43,7 @@ const solarSystem = new THREE.Group();
 scene.add(solarSystem);
 
 const objectsToAnimate = [];
-console.log('[DEBUG] 장면 세팅 직후:', { scene, solarSystem }, 'children:', solarSystem.children.length);
+console.log('[DEBUG] 장면 세팅 직후:', { solarSystem }, 'children:', solarSystem.children.length);
 
 // ==============================
 // 3) 유틸리티
@@ -71,12 +87,15 @@ function fitCameraToObject(group, padding = 1.6) {
 // ==============================
 async function getJsonFromAI(userInput) {
   // 프론트에서는 API 키를 절대 사용하지 않음! (server.js가 대신 호출)
-  // main.js의 getJsonFromAI 함수 내부
-const promptTemplate = `
+  
+  // [수정] 프롬프트 수정: AI가 'textureKey'를 반환하도록 유도
+  const promptTemplate = `
 당신은 최고의 JSON 전문가입니다.
 아래 규칙을 반드시 지켜 응답하세요.
 - 반드시 "objects" 키를 포함하는 단일 JSON 객체로만 응답합니다.
 - 설명이나 코드블록(\`\`\`) 없이 순수한 JSON 텍스트만 반환합니다.
+- 텍스처가 있는 객체(태양, 지구 등)는 'color' 대신 'textureKey'를 사용합니다.
+- 'textureKey'는 "Sun", "Earth", "Mars", "Jupiter", "Saturn", "Venus", "Mercury", "Moon" 중 하나여야 합니다.
 
 ---
 [예시 1]
@@ -84,8 +103,18 @@ const promptTemplate = `
 JSON 응답:
 {
   "objects": [
-    { "name": "Sun", "size": 20, "color": "0xffdd00", "rotation_speed": 0.004 },
-    { "name": "Earth", "size": 10, "color": "0x00aaff", "rotation_speed": 0.01, "orbit": { "target": "Sun", "distance": 50, "speed": 0.005 } }
+    { "name": "Sun", "size": 20, "textureKey": "Sun", "rotation_speed": 0.004 },
+    { "name": "Earth", "size": 10, "textureKey": "Earth", "rotation_speed": 0.01, "orbit": { "target": "Sun", "distance": 50, "speed": 0.005 } }
+  ]
+}
+---
+[예시 2]
+사용자 입력: 화성과 달
+JSON 응답:
+{
+  "objects": [
+    { "name": "Mars", "size": 8, "textureKey": "Mars", "rotation_speed": 0.008 },
+    { "name": "Moon", "size": 3, "textureKey": "Moon", "rotation_speed": 0.01, "orbit": { "target": "Mars", "distance": 15, "speed": 0.01 } }
   ]
 }
 ---
@@ -94,6 +123,7 @@ JSON 응답:
 사용자 입력: ${userInput}
 JSON 응답:
 `.trim();
+  // --- [프롬프트 수정 완료] ---
 
   console.log('[DEBUG] 프록시 호출 준비:', { userInput });
 
@@ -123,13 +153,45 @@ JSON 응답:
 // ==============================
 // 5) 장면 구성
 // ==============================
+
+// [수정] createCelestialObject 함수 전체 수정
 function createCelestialObject(objData) {
   const orbit = new THREE.Object3D();
 
   console.log('[DEBUG] createCelestialObject 원본:', objData);
 
   const geometry = new THREE.SphereGeometry(num(objData.size, 5), 32, 32);
-  const material = new THREE.MeshBasicMaterial({ color: toThreeColor(objData.color) });
+
+  // --- [텍스처 및 재질 로직 수정] ---
+  let material;
+  const textureKey = objData.textureKey; // AI가 제공한 키 (예: "Earth")
+  const textureInfo = textureKey ? PLANET_TEXTURES[textureKey] : undefined;
+
+  if (textureInfo && textureInfo.map) {
+    // 1. config.js에 텍스처 정보가 있는 경우
+    const texture = textureLoader.load(textureInfo.map);
+
+    if (textureKey === 'Sun') {
+      // 1-1. 태양: 스스로 빛나야 하므로 MeshBasicMaterial 사용
+      material = new THREE.MeshBasicMaterial({ map: texture });
+    } else {
+      // 1-2. 행성/위성: 조명에 반응해야 하므로 MeshStandardMaterial 사용
+      material = new THREE.MeshStandardMaterial({ map: texture });
+    }
+  } else if (objData.color) {
+    // 2. 텍스처 키가 없고 'color'가 제공된 경우 (예전 방식 또는 태양)
+    material = new THREE.MeshBasicMaterial({
+      color: toThreeColor(objData.color)
+    });
+  } else {
+    // 3. 텍스처도 색상도 없는 경우 (안전 장치)
+    material = new THREE.MeshStandardMaterial({
+      color: 0xcccccc,
+      roughness: 0.8
+    });
+  }
+  // --- [재질 로직 수정 완료] ---
+
   const mesh = new THREE.Mesh(geometry, material);
 
   if (!objData.orbit || !objData.orbit.target) {
@@ -148,7 +210,7 @@ function createCelestialObject(objData) {
   console.log('[DEBUG] 생성된 오브젝트:', {
     name: objData.name,
     size: geometry.parameters.radius * 2,
-    color: objData.color,
+    textureKey: objData.textureKey, // 디버그 로그 수정
     rotation_speed: mesh.userData.rotationSpeed,
     orbit_speed: orbit.userData.orbitSpeed,
     hasOrbit: !!(objData.orbit && objData.orbit.target)
