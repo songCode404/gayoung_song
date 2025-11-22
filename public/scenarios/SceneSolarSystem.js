@@ -1,42 +1,52 @@
+// public/scenarios/SceneSolarSystem.js
 import { Planet } from '../planet.js';
 
-// 시나리오 전용 상수 (main.js에서 import해서 쓸 수 있게 export)
 export const G = 100; 
 
-export function initSolarSystem(scene, world, loader) {
+export function initSolarSystem(scene, world, loader, aiData) {
     const planets = [];
+    const objects = aiData?.objects || [];
 
-    // 1. 태양 (중심, 정지)
+    // 1. 태양 역할 (첫 번째 데이터)
+    // 데이터가 없으면 기본 태양 사용
+    const sunData = objects.find(o => o.name.toLowerCase().includes('sun')) || objects[0] || {
+        name: 'Sun', textureKey: 'Sun', size: 6, mass: 500
+    };
+
     const sun = new Planet(scene, world, loader, {
-        name: 'Sun',
-        textureKey: 'Sun',
-        size: 6,
-        mass: 1000, // 매우 무거움
-        position: { x: 0, y: 0, z: 0 },
+        ...sunData,
+        position: { x: 0, y: 0, z: 0 }, // 태양은 무조건 중심
         velocity: { x: 0, y: 0, z: 0 }
     }, 'solar_system');
-
     planets.push(sun);
 
-    // 2. 지구 (공전)
-    const r = 50; // 태양과의 거리
-    // 원운동 속도 공식: v = sqrt(G * M_sun / r)
-    const orbitalSpeed = Math.sqrt((G * sun.mass) / r);
+    // 2. 행성들 (나머지 데이터)
+    // 태양을 제외한 나머지 객체들을 공전시킴
+    const planetObjects = objects.filter(o => o !== sunData);
+    
+    // 만약 데이터가 없으면 기본 지구 하나 추가
+    if (planetObjects.length === 0) {
+        planetObjects.push({ name: 'Earth', textureKey: 'Earth', size: 2, mass: 1 });
+    }
 
-    const earth = new Planet(scene, world, loader, {
-        name: 'Earth',
-        textureKey: 'Earth',
-        size: 2,
-        mass: 1,
-        position: { x: r, y: 0, z: 0 }, 
-        velocity: { x: 0, y: 0, z: orbitalSpeed } // z축(접선) 방향으로 발사
-    }, 'solar_system');
+    let distance = 30; // 첫 행성 거리
 
-    planets.push(earth);
+    planetObjects.forEach((pData) => {
+        // 공전 속도 자동 계산 (v = sqrt(GM/r))
+        const speed = Math.sqrt((G * sun.mass) / distance);
+        
+        const p = new Planet(scene, world, loader, {
+            ...pData, // AI가 준 텍스처, 크기 적용
+            position: { x: distance, y: 0, z: 0 }, // 거리는 시나리오가 배치
+            velocity: { x: 0, y: 0, z: speed }     // 속도는 물리 공식대로
+        }, 'solar_system');
+        
+        planets.push(p);
+        distance += 20; // 다음 행성은 더 멀리 배치
+    });
 
-    // 전체 궤도를 내려다보는 Top-Down 뷰
     return { 
         planets, 
-        cameraPosition: { x: 0, y: 120, z: 0 } 
+        cameraPosition: { x: 0, y: 100, z: 150 } 
     };
 }

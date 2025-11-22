@@ -47,9 +47,11 @@
 </head>
 <body>
     <div class="ui">
-        <input id="prompt-input" placeholder="예: 태양과 지구를 보여줘!" />
-        <button id="generate-button">생성</button>
-        <span id="status"></span>
+        <input id="user-input" placeholder="예: 지구와 목성 충돌시켜줘" style="width: 250px; padding: 5px;" />
+        
+        <button id="send-btn" style="padding: 5px 10px; cursor: pointer;">생성</button>
+        
+        <div id="ai-status" style="margin-top: 5px; font-size: 0.9em; color: #ddd;"></div>
     </div>
 
     <canvas id="three-canvas"></canvas>
