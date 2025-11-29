@@ -32,6 +32,37 @@ sunLight.position.set(0, 0, 0);
 scene.add(sunLight);
 
 // ==========================================
+// ★ 우주 배경 (Sky Sphere) 생성
+// ==========================================
+function createUniverse() {
+    const loader = new THREE.TextureLoader();
+    
+    // 1. 아주 거대한 구를 만듭니다 (반지름 1700)
+    const geometry = new THREE.SphereGeometry(1700, 64, 64);
+    
+    // 2. 우주 이미지를 로드합니다 (경로 주의: /textures/)
+    const texture = loader.load('/assets/textures/galaxy.png', 
+        () => console.log("🌌 우주 배경 로드 성공"),
+        undefined,
+        (err) => console.error("🚨 우주 배경 로드 실패:", err)
+    );
+    
+    // 3. 재질 설정 (안쪽 면 렌더링)
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.BackSide 
+    });
+
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+    
+    return mesh;
+}
+
+// 배경 생성 및 변수에 저장
+const universeMesh = createUniverse();
+
+// ==========================================
 // 2. 물리 월드(Physics) 설정
 // ==========================================
 const world = new CANNON.World();
@@ -43,45 +74,70 @@ world.broadphase = new CANNON.NaiveBroadphase();
 // ==========================================
 let planets = []; 
 let currentScenarioType = ''; 
+let currentScenarioUpdater = null; // 시나리오 전용 업데이트 함수
 
 // ==========================================
 // 4. 유틸리티 함수들
 // ==========================================
 
-// (1) 화면 초기화 (청소)
+// (1) 화면 초기화 (강력한 청소)
 function resetScene() {
+    // 1. 시나리오 애니메이션 끊기
+    currentScenarioUpdater = null;
+
+    // 2. 물리 엔진용 행성 비우기
     for (const p of planets) {
-        p.dispose();
+        if (p.dispose) p.dispose();
     }
     planets = [];
+
+    // 3. ★ 화면(Scene)에 그려진 객체 강제 삭제
+    // (우주 배경, 조명, 카메라는 보호)
+    for (let i = scene.children.length - 1; i >= 0; i--) {
+        const obj = scene.children[i];
+
+        // 보호 구역: 조명, 카메라, 우주 배경
+        if (obj.isLight || obj.isCamera || obj === universeMesh) continue;
+
+        // 그 외(이전 행성, 궤도 선, 파티클 등) 삭제
+        scene.remove(obj);
+
+        // 메모리 해제
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+            if (Array.isArray(obj.material)) {
+                obj.material.forEach(m => m.dispose());
+            } else {
+                obj.material.dispose();
+            }
+        }
+    }
+    
+    console.log("🧹 씬 초기화 완료");
 }
 
-// (2) AI 데이터 + 시나리오 파일 결합 (★ 디버깅 핵심 구역)
+// (2) AI 데이터 + 시나리오 파일 결합
 async function createSceneFromData(aiData) {
     resetScene(); 
 
-    // 🔍 [디버그 3] 데이터 수신 확인
-    console.log("📦 [Debug] 3. createSceneFromData 함수 진입. 받은 데이터:", aiData);
+    console.log("📦 [Debug] 받은 데이터:", aiData);
 
     if (!aiData || !aiData.scenarioType) {
-        console.error("🚨 [Error] 데이터에 scenarioType이 없습니다!");
+        console.error("🚨 [Error] 데이터 오류: scenarioType 없음");
         return;
     }
 
-    // ★ 대소문자 및 공백 제거 (안전장치)
     const safeScenarioType = aiData.scenarioType.toLowerCase().trim();
-    
-    // 🔍 [디버그 4] 변환된 타입 확인
-    console.log(`🧐 [Debug] 4. 변환된 시나리오 타입: '${safeScenarioType}' (원본: ${aiData.scenarioType})`);
+    console.log(`🧐 [Debug] 시나리오 타입: '${safeScenarioType}'`);
 
     currentScenarioType = safeScenarioType;
     let setupData = null;
     const loader = new THREE.TextureLoader();
 
-    // ★ switch 문에서 safeScenarioType을 사용해야 합니다!
+    // ★ 시나리오 선택
     switch (safeScenarioType) {
         case 'collision':
-            console.log("⚡ [Debug] 5. 'collision' 케이스 당첨! -> 파일 로딩 시작");
+            console.log("⚡ 충돌 시나리오 로딩");
             setupData = initCollisionScene(scene, world, loader, aiData);
             break;
 
@@ -89,24 +145,21 @@ async function createSceneFromData(aiData) {
         case 'orbit':
         case 'solar_eclipse':
         case 'lunar_eclipse':
-            console.log(`☀️ [Debug] 5. '${safeScenarioType}' 케이스 당첨! -> 파일 로딩 시작`);
+            console.log("☀️ 태양계 시나리오 로딩");
             setupData = initSolarSystem(scene, world, loader, aiData);
             break;
 
         case 'planet_birth':
-            console.log("🌱 [Debug] 5. 'planet_birth' 케이스 당첨! -> 파일 로딩 시작");
+            console.log("🌱 탄생 시나리오 로딩");
             setupData = initBirthScene(scene, world, loader, aiData);
             break;
 
         default:
-            console.warn(`⚠️ [Debug] 5. Switch문에 없는 타입입니다: '${safeScenarioType}'`);
-            console.log("🤖 [Debug] 시나리오 파일 없이 AI 데이터로 직접 생성합니다.");
-            
+            console.warn(`⚠️ 알 수 없는 타입: '${safeScenarioType}' -> 기본 생성`);
             setupData = { 
                 planets: [], 
                 cameraPosition: aiData.cameraPosition 
             };
-            
             if (aiData.objects) {
                 for (const objData of aiData.objects) {
                     const p = new Planet(scene, world, loader, objData, currentScenarioType);
@@ -116,15 +169,20 @@ async function createSceneFromData(aiData) {
             break;
     }
 
-    // 시나리오 파일에서 반환된 데이터 적용
+    // ★ 설정 적용
     if (setupData) {
+        // 행성 리스트 갱신
         if (setupData.planets && setupData.planets.length > 0) {
-            console.log(`✅ [Debug] 6. 파일에서 행성 ${setupData.planets.length}개 로드 성공`);
             planets = setupData.planets;
-        } else {
-            console.log("ℹ️ [Debug] 6. 파일에서 생성된 행성이 없거나 직접 생성 모드입니다.");
         }
 
+        // ★ 시나리오 전용 업데이트 함수 연결 (폭발, 공전 등)
+        if (setupData.update && typeof setupData.update === 'function') {
+            console.log("⚡ 시나리오 전용 애니메이션 연결됨");
+            currentScenarioUpdater = setupData.update;
+        }
+
+        // 카메라 이동
         const camPos = setupData.cameraPosition || aiData.cameraPosition;
         if (camPos) {
             camera.position.set(camPos.x, camPos.y, camPos.z);
@@ -133,8 +191,9 @@ async function createSceneFromData(aiData) {
     }
 }
 
-// (3) 만유인력 적용
+// (3) 만유인력 적용 (물리 기반 모드일 때만)
 function applyGravity() {
+    // 충돌이나 탄생 모드 등에서는 중력 끄기 (시나리오가 알아서 함)
     if (currentScenarioType === 'collision' || currentScenarioType === 'planet_birth') return;
 
     if (planets.length < 2) return;
@@ -146,7 +205,8 @@ function applyGravity() {
 
     for (let i = 1; i < sortedPlanets.length; i++) {
         const planet = sortedPlanets[i];
-        
+        if(!planet.body) continue; // body가 없으면(시각적 모드 등) 건너뜀
+
         const distVec = new CANNON.Vec3();
         star.body.position.vsub(planet.body.position, distVec); 
         const r_sq = distVec.lengthSquared();
@@ -154,7 +214,6 @@ function applyGravity() {
         if (r_sq < 1) continue; 
 
         const force = (G * star.mass * planet.mass) / r_sq;
-        
         distVec.normalize();
         distVec.scale(force, distVec); 
         
@@ -171,8 +230,7 @@ const statusDiv = document.getElementById('ai-status');
 
 async function handleUserRequest() {
     const text = inputField.value;
-    // 🔍 [디버그 1] 버튼 클릭 확인
-    console.log(`🖱️ [Debug] 1. 버튼 클릭됨. 입력값: "${text}"`);
+    console.log(`🖱️ 버튼 클릭: "${text}"`);
     
     if (!text) return;
 
@@ -180,20 +238,16 @@ async function handleUserRequest() {
         statusDiv.innerText = "AI가 생각 중... 🤔";
         sendBtn.disabled = true;
 
-        // 1. AI에게 질문
         const scenarioData = await getJsonFromAI(text);
-        
-        // 🔍 [디버그 2] AI 응답 확인
-        console.log("🤖 [Debug] 2. AI 응답 도착:", scenarioData);
+        console.log("🤖 AI 응답:", scenarioData);
 
-        // 2. 씬 구성
         await createSceneFromData(scenarioData);
 
         statusDiv.innerText = `✅ 적용 완료: ${scenarioData.scenarioType}`;
         
     } catch (error) {
-        console.error("🚨 [Error] 처리 중 오류 발생:", error);
-        statusDiv.innerText = "🚨 오류 발생! 콘솔을 확인하세요.";
+        console.error("🚨 오류:", error);
+        statusDiv.innerText = "🚨 오류 발생! 콘솔 확인";
     } finally {
         sendBtn.disabled = false;
         inputField.value = ''; 
@@ -219,31 +273,38 @@ function animate() {
     
     const deltaTime = clock.getDelta();
 
+    // 1. 우주 배경 회전
+    if (universeMesh) {
+        universeMesh.rotation.y += 0.0001; 
+    }
+
+    // 2. 물리 엔진 업데이트
     applyGravity(); 
     world.step(1 / 60);
 
+    // 3. 각 행성 업데이트
     for (let i = planets.length - 1; i >= 0; i--) {
         const p = planets[i];
-        p.update(deltaTime);
+        if(p.update) p.update(deltaTime);
 
         if (p.isDead) {
-            p.dispose();
+            if(p.dispose) p.dispose();
             planets.splice(i, 1);
         }
+    }
+
+    // 4. 시나리오 전용 애니메이션 (폭발, 궤도 공전 등)
+    if (currentScenarioUpdater) {
+        currentScenarioUpdater(deltaTime); 
     }
 
     controls.update();
     renderer.render(scene, camera);
 }
 
-// 초기 실행
-createSceneFromData({ 
-    scenarioType: 'solar_system', 
-    objects: [] 
-});
-
 animate();
 
+// 화면 리사이즈 대응
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
