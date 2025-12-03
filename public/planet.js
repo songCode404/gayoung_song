@@ -48,7 +48,6 @@ export class Planet {
         // 🪐 그 외 행성들
         let material;
         
-        // 경로 수정: /assets/textures/ -> /textures/
         // 파일명 패턴: 2k_mars.jpg, 2k_jupiter.jpg 등
         const texturePath = `/assets/textures/2k_${key}.jpg`;
 

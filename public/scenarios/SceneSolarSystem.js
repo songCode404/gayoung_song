@@ -100,7 +100,7 @@ export function initSolarSystem(scene, world, loader, aiData) {
         // (4) 고리/달 추가 (기존 코드 유지)
         if (conf.ring === true) {
             const ringGeo = new THREE.RingGeometry(conf.size * 1.4, conf.size * 2.2, 64);
-            const ringTex = texLoader.load('/assets/textures/saturn_ring.png');
+            const ringTex = texLoader.load('/assets/textures/saturn_ring.jpg');
             const ringMat = new THREE.MeshBasicMaterial({
                 map: ringTex, side: THREE.DoubleSide, transparent: true, opacity: 0.8
             });
